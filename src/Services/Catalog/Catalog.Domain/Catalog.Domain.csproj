@@ -1,0 +1,23 @@
+<!--
+  Catalog.Domain — Kitap Kataloğu Domain Katmanı
+  
+  EĞİTİCİ NOT:
+  Clean Architecture'da Domain katmanı en iç katmandır.
+  Hiçbir dış bağımlılığı yoktur (sadece SharedKernel).
+  Tüm iş kuralları burada yaşar.
+  Framework'ler (EF Core, ASP.NET) burada YOKTUR.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Catalog.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\SharedKernel\SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

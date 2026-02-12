@@ -1,0 +1,30 @@
+<!--
+  ═══════════════════════════════════════════════════════════════
+  SharedKernel — Tüm Servislerin Paylaştığı Temel Yapı Taşları
+  ═══════════════════════════════════════════════════════════════
+  EĞİTİCİ NOT:
+  SharedKernel, DDD (Domain-Driven Design) terminolojisinde
+  tüm Bounded Context'lerin ortak kullandığı yapıları barındırır.
+
+  NEDEN Ayrı Bir Proje?
+  → Her mikroservis kendi Domain katmanında bu base class'ları
+    kullanır. Kod tekrarını önler (DRY prensibi).
+  → Ancak dikkat: SharedKernel'e iş mantığı konulmaz!
+    Sadece yapısal/teknik base class'lar yer alır.
+  ═══════════════════════════════════════════════════════════════
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SharedKernel</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MediatR: CQRS pattern'i için Command/Query handler'ları ve Domain Event dispatch -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+
+</Project>

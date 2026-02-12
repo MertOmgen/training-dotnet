@@ -1,0 +1,198 @@
+# =============================================================================
+# DOCKER COMPOSE — Library Management System Altyapısı
+# =============================================================================
+# 📚 EĞİTİCİ NOT (Tech-Tutor):
+# Bu dosya, tüm microservice altyapısını tek bir komutla ayağa kaldırır.
+# "docker compose up -d" komutu ile tüm konteynerlar başlatılır.
+#
+# NEDEN Docker Compose?
+# → Microservice mimarisinde her servis farklı bağımlılıklara sahiptir.
+#   (PostgreSQL, MongoDB, Redis, RabbitMQ, Elasticsearch...)
+#   Docker Compose, tüm bu bağımlılıkları tanımlayıp yönetmemizi sağlar.
+#
+# NASIL Çalışır?
+# → Her "service" bloğu bir konteyner tanımlar.
+# → "depends_on" ile servisler arası bağımlılık sıralaması yapılır.
+# → "volumes" ile veri kalıcılığı (persistence) sağlanır.
+# → "healthcheck" ile servis sağlık kontrolü yapılır.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — İlişkisel Veritabanı (Write DB)
+  # ---------------------------------------------------------------------------
+  # NEDEN PostgreSQL?
+  # → ACID uyumlu, güçlü ilişkisel veritabanı.
+  # → CQRS'nin "Write" tarafında tutarlılık (consistency) kritiktir.
+  # → Alternatif: SQL Server — ancak PostgreSQL açık kaynak ve daha hafiftir.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: lms-postgres
+    environment:
+      POSTGRES_USER: lms_user
+      POSTGRES_PASSWORD: lms_password_2024
+      POSTGRES_DB: lms_catalog_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms_user -d lms_catalog_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms-network
+
+  # ---------------------------------------------------------------------------
+  # MongoDB — NoSQL Veritabanı (Read DB)
+  # ---------------------------------------------------------------------------
+  # NEDEN MongoDB?
+  # → CQRS'nin "Read" tarafında denormalize veri saklanır.
+  # → Okuma sorguları için optimize edilmiş, esnek şema yapısı sunar.
+  # → "Polyglot Persistence" prensibi: her iş için en uygun veritabanı.
+  # → Alternatif: Elasticsearch tek başına — ancak MongoDB daha iyi CRUD desteği sunar.
+  # ---------------------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: lms-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lms_user
+      MONGO_INITDB_ROOT_PASSWORD: lms_password_2024
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms-network
+
+  # ---------------------------------------------------------------------------
+  # Redis — Dağıtık Önbellek (Distributed Cache)
+  # ---------------------------------------------------------------------------
+  # NEDEN Redis?
+  # → In-memory cache ile okuma sorgularını hızlandırır.
+  # → MediatR CachingBehavior ile sorgu sonuçları otomatik cache'lenir.
+  # → Pub/Sub desteği de vardır, ancak burada RabbitMQ tercih ediyoruz.
+  # → Alternatif: Memcached — ancak Redis daha zengin veri yapıları sunar.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: lms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms-network
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ — Mesaj Kuyruğu (Message Broker)
+  # ---------------------------------------------------------------------------
+  # NEDEN RabbitMQ?
+  # → Servisler arası asenkron iletişim sağlar (Event-Driven Architecture).
+  # → BookCreatedEvent gibi olaylar publish edilip diğer servisler consume eder.
+  # → Management UI ile kuyrukları görsel olarak takip edebilirsiniz.
+  # → Alternatif: Apache Kafka — ancak Kafka daha çok log streaming için uygundur.
+  #   RabbitMQ, klasik mesaj kuyruğu senaryoları için daha sadedir.
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: lms-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: lms_user
+      RABBITMQ_DEFAULT_PASS: lms_password_2024
+    ports:
+      - "5672:5672"    # AMQP protokolü
+      - "15672:15672"  # Management UI (http://localhost:15672)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms-network
+
+  # ---------------------------------------------------------------------------
+  # Elasticsearch — Arama Motoru & Log Deposu
+  # ---------------------------------------------------------------------------
+  # NEDEN Elasticsearch?
+  # → Full-text search: Kitap/yazar aramalarında çok hızlı sonuç verir.
+  # → Serilog log'larını merkezi olarak depolar (Centralized Logging).
+  # → Alternatif: Apache Solr — ancak Elasticsearch ekosistemi daha zengindir.
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: lms-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - lms-network
+
+  # ---------------------------------------------------------------------------
+  # Kibana — Elasticsearch Görselleştirme
+  # ---------------------------------------------------------------------------
+  # NEDEN Kibana?
+  # → Elasticsearch'teki log'ları ve arama verilerini görselleştirir.
+  # → Dashboard'lar ile uygulama sağlığını takip edebilirsiniz.
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: lms-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+# =============================================================================
+# Volumes — Veri Kalıcılığı
+# =============================================================================
+# Docker konteynerleri varsayılan olarak "ephemeral" (geçici) dir.
+# Named volumes ile verileri konteyner yeniden başlatılsa bile koruruz.
+# =============================================================================
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+  elasticsearch_data:
+
+# =============================================================================
+# Networks — Servis İletişimi
+# =============================================================================
+# Tüm servisler aynı Docker network'ünde olduğu için birbirlerini
+# konteyner adı ile bulabilir (DNS resolution).
+# Örnek: Catalog servisi "postgres" adıyla veritabanına bağlanır.
+# =============================================================================
+networks:
+  lms-network:
+    driver: bridge

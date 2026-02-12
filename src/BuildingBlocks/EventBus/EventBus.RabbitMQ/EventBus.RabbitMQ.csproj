@@ -1,0 +1,32 @@
+<!--
+  EventBus.RabbitMQ — MassTransit ile RabbitMQ Implementasyonu
+  
+  EĞİTİCİ NOT:
+  NEDEN MassTransit?
+  → Native RabbitMQ.Client ile çalışmak mümkündür ancak:
+    - Mesaj serializasyonu, retry, dead-letter queue yönetimi,
+      consumer lifecycle... hepsini kendiniz yazmanız gerekir.
+    - MassTransit tüm bunları soyutlayarak "convention over configuration"
+      yaklaşımı sunar.
+  → Alternatif: NServiceBus (ticari), Wolverine (yeni nesil), 
+    veya raw RabbitMQ.Client (daha fazla kontrol ama daha fazla kod).
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EventBus.RabbitMQ</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MassTransit: RabbitMQ üzerine soyutlama katmanı -->
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EventBus.Abstractions\EventBus.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

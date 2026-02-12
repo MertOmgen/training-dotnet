@@ -1,0 +1,42 @@
+<!--
+  Identity.API — Kimlik Doğrulama ve Yetkilendirme Servisi
+  
+  EĞİTİCİ NOT:
+  NEDEN Ayrı Identity Servisi?
+  → Microservice mimarisinde kimlik doğrulama merkezi bir servistir.
+    Tüm servisler JWT token'ı doğrulamak için bu servise güvenir.
+    Single Sign-On (SSO) altyapısının temelini oluşturur.
+  
+  ASP.NET Core Identity:
+  → Kullanıcı yönetimi (kayıt, giriş, şifre sıfırlama) için
+    hazır altyapı sunar. Kendi implementasyonumuzu yazmamıza gerek yok.
+  
+  JWT (JSON Web Token):
+  → Stateless authentication. Sunucu session tutmaz.
+    Her istek token ile doğrulanır. Microservice'ler için ideal.
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Identity.API</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

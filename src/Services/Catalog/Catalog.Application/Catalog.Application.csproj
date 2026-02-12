@@ -1,0 +1,39 @@
+<!--
+  Catalog.Application — Uygulama Katmanı (CQRS + MediatR)
+  
+  EĞİTİCİ NOT:
+  Application katmanı, Domain ve Infrastructure arasında köprü görevi görür.
+  Use case'leri (iş senaryoları) orkestre eder.
+  
+  Clean Architecture'da Application, Domain'e bağımlıdır ama
+  Infrastructure'a bağımlı DEĞİLDİR. Infrastructure bağımlılıkları
+  interface (IBookRepository gibi) üzerinden soyutlanır.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Catalog.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MediatR: CQRS Command/Query handler'ları ve Pipeline Behavior -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <!-- FluentValidation: Input validasyonu (Domain validasyonundan farklı!) -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <!-- AutoMapper: DTO dönüşümleri -->
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <!-- MongoDB Driver: CQRS Read Side — Query handler'lar doğrudan MongoDB'den okur -->
+    <PackageReference Include="MongoDB.Driver" Version="2.29.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Catalog.Domain\Catalog.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Caching\Caching.Redis\Caching.Redis.csproj" />
+  </ItemGroup>
+
+</Project>

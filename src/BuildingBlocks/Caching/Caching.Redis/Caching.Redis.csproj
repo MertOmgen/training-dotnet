@@ -1,0 +1,30 @@
+<!--
+  Caching.Redis — Redis Distributed Cache + MediatR CachingBehavior
+  
+  EĞİTİCİ NOT:
+  NEDEN Redis?
+  → In-memory cache (MemoryCache) tek bir sunucu için çalışır.
+    Microservice mimarisinde her servisin birden fazla instance'ı olabilir.
+    Redis, tüm instance'ların ortak kullanabileceği "dağıtık" bir cache sunar.
+  → Alternatif: Memcached (daha basit ama veri yapısı desteği zayıf),
+    NCache (ticari, .NET odaklı).
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Caching.Redis</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- StackExchange.Redis: .NET dünyasının standart Redis client'ı -->
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <!-- MediatR: CachingBehavior pipeline behavior için -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <!-- System.Text.Json: Cache değerlerini serialize/deserialize için -->
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.11" />
+  </ItemGroup>
+
+</Project>

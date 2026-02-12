@@ -1,0 +1,49 @@
+<!--
+  Catalog.API — API Katmanı (Entry Point)
+  
+  EĞİTİCİ NOT:
+  API katmanı, uygulamanın dış dünyaya açılan kapısıdır.
+  HTTP endpoint'leri burada tanımlanır.
+  DI kayıtları, middleware pipeline ve konfigürasyon burada yapılır.
+  
+  NEDEN Ayrı API Projesi?
+  → Application ve Infrastructure'dan bağımsız deploy edilebilir.
+  → Farklı host'lar (gRPC, SignalR) için farklı API projeleri oluşturulabilir.
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Catalog.API</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Serilog: Structured logging framework -->
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+
+    <!-- OpenTelemetry: Distributed Tracing -->
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+
+    <!-- Swagger -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+    <!-- Redis DI Extensions -->
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.11" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Catalog.Application\Catalog.Application.csproj" />
+    <ProjectReference Include="..\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Caching\Caching.Redis\Caching.Redis.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,62 @@
+<!--
+  Training-dotnet.slnx — .NET 8 Solution File
+  
+  📚 EĞİTİCİ NOT:
+  .slnx (XML tabanlı solution dosyası) .NET 8+ ile kullanılabilir.
+  Klasör yapısı ile projeleri organize eder.
+  
+  Proje Organizasyonu:
+  └── src/
+      ├── BuildingBlocks/      → Paylaşılan kütüphaneler
+      │   ├── SharedKernel     → DDD abstraction'ları
+      │   ├── EventBus         → Mesajlaşma altyapısı
+      │   └── Caching          → Redis cache
+      ├── Services/            → Mikroservisler
+      │   ├── Catalog          → Kitap kataloğu (4 katman)
+      │   ├── Identity         → Kimlik doğrulama
+      │   ├── Borrowing        → Ödünç alma/iade
+      │   └── Notification     → Bildirim servisi
+      └── ApiGateway           → YARP Reverse Proxy
+-->
+<Solution>
+  <!-- API Gateway (Root Project) -->
+  <Project Path="Training-dotnet.csproj" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Building Blocks (Shared Libraries) -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/SharedKernel/SharedKernel.csproj" />
+  </Folder>
+
+  <Folder Name="/BuildingBlocks/EventBus/">
+    <Project Path="src/BuildingBlocks/EventBus/EventBus.Abstractions/EventBus.Abstractions.csproj" />
+    <Project Path="src/BuildingBlocks/EventBus/EventBus.RabbitMQ/EventBus.RabbitMQ.csproj" />
+  </Folder>
+
+  <Folder Name="/BuildingBlocks/Caching/">
+    <Project Path="src/BuildingBlocks/Caching/Caching.Redis/Caching.Redis.csproj" />
+  </Folder>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Services (Microservices) -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <Folder Name="/Services/Catalog/">
+    <Project Path="src/Services/Catalog/Catalog.Domain/Catalog.Domain.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Application/Catalog.Application.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.API/Catalog.API.csproj" />
+  </Folder>
+
+  <Folder Name="/Services/Identity/">
+    <Project Path="src/Services/Identity/Identity.API/Identity.API.csproj" />
+  </Folder>
+
+  <Folder Name="/Services/Borrowing/">
+    <Project Path="src/Services/Borrowing/Borrowing.API/Borrowing.API.csproj" />
+  </Folder>
+
+  <Folder Name="/Services/Notification/">
+    <Project Path="src/Services/Notification/Notification.API/Notification.API.csproj" />
+  </Folder>
+</Solution>

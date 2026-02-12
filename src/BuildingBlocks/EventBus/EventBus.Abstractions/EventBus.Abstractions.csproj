@@ -1,0 +1,19 @@
+<!--
+  EventBus.Abstractions — Olay Veriyolu Soyutlaması
+  
+  EĞİTİCİ NOT:
+  Bu proje, Event Bus'ın sözleşmelerini (contracts) tanımlar.
+  Somut implementasyon (RabbitMQ, Azure Service Bus, vb.) ayrı projededir.
+  Bu sayede Dependency Inversion (SOLID-D) prensibi uygulanır:
+  Üst katmanlar soyutlamaya bağımlıdır, somut implementasyona değil.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EventBus.Abstractions</RootNamespace>
+  </PropertyGroup>
+
+</Project>

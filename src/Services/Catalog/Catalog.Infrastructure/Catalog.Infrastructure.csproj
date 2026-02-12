@@ -1,0 +1,53 @@
+<!--
+  Catalog.Infrastructure — Altyapı Katmanı
+  
+  EĞİTİCİ NOT:
+  Infrastructure katmanı, dış bağımlılıkların (veritabanı, message broker,
+  cache, arama motoru) somut implementasyonlarını barındırır.
+  
+  Clean Architecture'da bu katman en dıştadır ve Domain/Application
+  katmanlarındaki interface'leri implement eder.
+  
+  Polyglot Persistence:
+  → PostgreSQL: Write DB (EF Core ile)
+  → MongoDB: Read DB (CQRS read side)
+  → Elasticsearch: Arama ve loglama
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Catalog.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core + PostgreSQL (Write DB) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <!-- MongoDB (Read DB) -->
+    <PackageReference Include="MongoDB.Driver" Version="2.29.0" />
+
+    <!-- Elasticsearch (Search & Logging) -->
+    <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.16.3" />
+
+    <!-- Polly (Resiliency: Retry + Circuit Breaker) -->
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.11" />
+    <PackageReference Include="Polly" Version="8.5.0" />
+
+    <!-- MediatR (Domain Event dispatch in SaveChanges) -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Catalog.Domain\Catalog.Domain.csproj" />
+    <ProjectReference Include="..\Catalog.Application\Catalog.Application.csproj" />
+  </ItemGroup>
+
+</Project>

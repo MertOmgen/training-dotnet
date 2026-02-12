@@ -1,0 +1,57 @@
+<!--
+  Training-dotnet.csproj → API Gateway (YARP Reverse Proxy)
+  
+  📚 EĞİTİCİ NOT (Tech-Tutor):
+  
+  NEDEN API Gateway?
+  → Client'lar tek bir URL üzerinden tüm mikroservislere erişir.
+    Gateway, istekleri ilgili servise yönlendirir (reverse proxy).
+  
+  YARP (Yet Another Reverse Proxy):
+  → Microsoft'un .NET için geliştirdiği reverse proxy kütüphanesi.
+  → Nginx/Envoy alternatifi, .NET ecosystem'e tam entegre.
+  → Konfigürasyon tabanlı: Kod yazmadan route kuralları tanımlanır.
+  
+  API Gateway Sorumlulukları:
+  1. Routing: /api/catalog/* → Catalog servisi
+  2. Rate Limiting: DDoS koruması
+  3. Authentication: JWT doğrulama (merkezi)
+  4. Load Balancing: Birden fazla servis instance'ına dağıtım
+  5. CORS: Cross-Origin istekleri yönetimi
+  
+  ┌──────────┐    ┌──────────────┐    ┌──────────────┐
+  │  Client  │ → │ API Gateway  │ → │ Catalog API  │ :5001
+  │          │    │ (YARP) :5000 │    │ Identity API │ :5002
+  │          │    │              │ → │ Borrowing    │ :5003
+  └──────────┘    └──────────────┘    │ Notification │ :5004
+                                      └──────────────┘
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ApiGateway</RootNamespace>
+    <!-- API Gateway root'ta olduğu için src/ altındaki diğer projeleri derlemeye dahil etme -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- YARP: .NET tabanlı Reverse Proxy -->
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    
+    <!-- JWT doğrulama (Gateway seviyesi) -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    
+    <!-- Rate Limiting (.NET 8 built-in) -->
+    <!-- Built-in, paket gerekmez -->
+    
+    <!-- Serilog -->
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    
+    <!-- Swagger -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+</Project>

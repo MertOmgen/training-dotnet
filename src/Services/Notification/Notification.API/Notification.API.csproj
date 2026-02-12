@@ -1,0 +1,40 @@
+<!--
+  Notification.API — Bildirim Servisi (Event Consumer)
+
+  EĞİTİCİ NOT:
+  NEDEN Consumer-Only Servis?
+  → Bu servis HTTP endpoint expose ETMEz (veya çok az yapar).
+    Görevi: RabbitMQ'dan event'leri consume edip bildirim göndermek.
+    
+  Reactive Microservice:
+  → Diğer servisler event publish eder, Notification dinler ve tepki verir.
+    Bu, "reactive microservice" yaklaşımıdır.
+  
+  Consume Edilen Event'ler:
+  → UserRegisteredIntegrationEvent → Hoşgeldin e-postası
+  → BookBorrowedIntegrationEvent → Ödünç alma onayı
+  → BookReturnedIntegrationEvent → İade onayı
+  → BookCreatedIntegrationEvent → Yeni kitap bildirimi
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Notification.API</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <!-- MailKit: Cross-platform email gönderimi -->
+    <PackageReference Include="MailKit" Version="4.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
