@@ -192,10 +192,10 @@ try
     builder.Services.AddOpenTelemetry()
         .ConfigureResource(resource => resource.AddService("Catalog.API"))
         .WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
+            .AddAspNetCoreInstrumentation() // Dışarıdan gelen HTTP isteklerini otomatik yakala
+            .AddHttpClientInstrumentation() // Başka servislere giden HTTP isteklerini otomatik yakala
             .AddConsoleExporter());
-
+            //.AddOtlpExporter();              Verileri Jaeger, Zipkin veya Elasticsearch'e gönder
     // =============================================================================
     // 9. Swagger + CORS
     // =============================================================================
@@ -240,7 +240,7 @@ try
         await esService.EnsureIndexCreatedAsync();
     }
 
-    Log.Information("Catalog.API başarıyla başlatıldı. Port: 5001");
+    Log.Information("Catalog.API başarıyla başlatıldı.");
     app.Run();
 }
 catch (Exception ex)

@@ -54,7 +54,7 @@ public class Result<T>
     public static Result<T> Failure(string error) => new(error);
 
     /// <summary>
-    /// Implicit conversion: T → Result&lt;T&gt; (başarılı)
+    /// Implicit conversion: T → Result<T>; (başarılı)
     /// Kullanım: return myBook; // otomatik olarak Result.Success(myBook) olur
     /// </summary>
     public static implicit operator Result<T>(T value) => Success(value);

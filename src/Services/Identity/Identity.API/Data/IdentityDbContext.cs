@@ -9,7 +9,7 @@ namespace Identity.API.Data;
 
 /// <summary>
 /// ASP.NET Core Identity tabloları + özel konfigürasyonlar için DbContext.
-/// IdentityDbContext&lt;ApplicationUser&gt; kullanıcı tablosunu otomatik yönetir.
+/// IdentityDbContext<ApplicationUser> kullanıcı tablosunu otomatik yönetir.
 /// </summary>
 public class IdentityDbContext : IdentityDbContext<ApplicationUser>
 {

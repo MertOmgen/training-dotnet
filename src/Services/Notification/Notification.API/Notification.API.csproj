@@ -3,7 +3,7 @@
 
   EĞİTİCİ NOT:
   NEDEN Consumer-Only Servis?
-  → Bu servis HTTP endpoint expose ETMEz (veya çok az yapar).
+  → Bu servis HTTP endpoint expose ETMEZ (veya çok az yapar).
     Görevi: RabbitMQ'dan event'leri consume edip bildirim göndermek.
     
   Reactive Microservice:

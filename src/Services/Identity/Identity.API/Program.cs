@@ -100,7 +100,7 @@ try
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtIssuer,
             // ─────────────────────────────────────────────────
-            // SymmetricSecurityKey: Aynı key ile şifrelme/doğrulama
+            // SymmetricSecurityKey: Aynı key ile şifreleme/doğrulama
             // Production'da AsymmetricSecurityKey (RSA) kullanılmalıdır:
             // → Identity servisi private key ile imzalar
             // → Diğer servisler public key ile doğrular
