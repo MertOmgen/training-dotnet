@@ -79,34 +79,28 @@ public class ElasticsearchService : IRequestHandler<SearchBooksQuery, SearchBook
                 // ─────────────────────────────────────────────
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
-                    q.Bool(b => b
-                        .Must(must =>
+                    q.Bool(b =>
+                    {
+                        b.Must(must =>
                         {
-                            // ─────────────────────────────────
-                            // Multi-match: Birden fazla alanda arar
-                            // → Title alanına 2x ağırlık (boost)
-                            //   verilir — başlık eşleşmesi daha
-                            //   önemlidir.
-                            // → Fuzziness: Yazım hataları tolere edilir
-                            //   "tolkein" → "tolkien" bulunur
-                            // ─────────────────────────────────
                             must.MultiMatch(mm => mm
                                 .Query(request.SearchTerm)
                                 .Fields(new[] { "title^2", "authorFullName", "description", "category" })
                                 .Fuzziness(new Fuzziness("AUTO"))
                             );
-                        })
-                        .Filter(filter =>
+                        });
+
+                        if (!string.IsNullOrWhiteSpace(request.Category))
                         {
-                            if (!string.IsNullOrWhiteSpace(request.Category))
+                            b.Filter(filter =>
                             {
                                 filter.Term(t => t
                                     .Field("category.keyword")
                                     .Value(request.Category)
                                 );
-                            }
-                        })
-                    );
+                            });
+                        }
+                    });
                 }
                 else if (!string.IsNullOrWhiteSpace(request.Category))
                 {

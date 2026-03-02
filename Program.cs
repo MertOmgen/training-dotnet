@@ -32,11 +32,12 @@
 // → Concurrency: Eşzamanlı istek sayısı sınırı
 // =============================================================================
 
-using System.Text;
-using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Text;
+using System.Threading.RateLimiting;
+using System.Timers;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -117,12 +118,15 @@ try
 
     // =========================================================================
     // 4. CORS
+    //Bu kod, sadece http://localhost:5173 adresinden gelen isteklerin API Gateway’e erişmesine izin verir.
+    //Frontend uygulamanız bu portlarda çalışıyorsa, API’ye erişim sorunsuz olur.
+    //Diğer adreslerden gelen istekler CORS nedeniyle reddedilir.
     // =========================================================================
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "http://localhost:4200")
+            policy.WithOrigins("http://localhost:5173")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -173,7 +177,7 @@ try
         Routes = new[] { "catalog", "identity", "borrowing", "notification" }
     })).WithTags("Health");
 
-    Log.Information("API Gateway başarıyla başlatıldı. Port: 5000");
+    Log.Information("API Gateway başarıyla başlatıldı.");
     app.Run();
 }
 catch (Exception ex)

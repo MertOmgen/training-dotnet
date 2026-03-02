@@ -141,10 +141,31 @@ try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         await dbContext.Database.MigrateAsync();
+
+        // =====================================================================
+        // Rol Seed — Varsayılan rolleri oluştur
+        // =====================================================================
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        string[] roles = ["User", "Librarian", "Admin"];
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(role));
+                Log.Information("Rol oluşturuldu: {Role}", role);
+            }
+        }
     }
 
-    Log.Information("Identity.API başarıyla başlatıldı. Port: 5002");
+    Log.Information("Identity.API başarıyla başlatıldı.");
     app.Run();
+}
+catch (HostAbortedException)
+{
+    // EF Core design-time tooling tarafından fırlatılır (dotnet ef migrations vb.)
+    // Bu beklenen bir davranıştır, fatal error olarak loglanmamalıdır.
+    Log.Information("Host, EF Core design-time tooling tarafından durduruldu.");
 }
 catch (Exception ex)
 {
