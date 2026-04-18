@@ -1,0 +1,64 @@
+<!--
+  ServiceDefaults — Paylaşılan Aspire Observability Konfigürasyonu
+  
+  📚 EĞİTİCİ NOT (Tech-Tutor):
+  
+  .NET Aspire'da ServiceDefaults nedir?
+  → "Convention over Configuration" prensibi: Her servis için
+    aynı OpenTelemetry, health check ve resilience konfigürasyonunu
+    tekrar tekrar yazmak yerine, bu ortak yapı tek bir projede tanımlanır
+    ve her servis bu projeye referans vererek tüm konfigürasyonu devralır.
+  
+  Bu Proje Neleri İçerir?
+  1. OpenTelemetry → Distributed Tracing + Metrics + Logging
+     → Aspire Dashboard'a OTLP protokolü üzerinden veri gönderir
+  2. Health Checks → /health (readiness) ve /alive (liveness) endpoint'leri
+     → Kubernetes probes için kullanılır
+  3. Service Discovery → Aspire yönetimli DNS-tabanlı servis bulma
+     → "http://catalog-api" → gerçek adres
+  4. HttpClient Resilience → Retry + Circuit Breaker (varsayılan politikalar)
+     → Her HttpClient'a otomatik uygulanır
+  
+  IsAspireSharedProject = true:
+  → SDK bu projeyi paylaşılan bir Aspire projesi olarak işaretler.
+    Bu sayede NuGet paket restore işlemi optimize edilir ve
+    AppHost bu projeyi doğru şekilde tanıyabilir.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Service Discovery: Servisler birbirini DNS ismiyle bulur
+      → AddServiceDiscovery() ile aktif edilir
+      → "http://catalog-api" → AppHost'taki "catalog-api" resource'una çözülür
+    -->
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.*" />
+    
+    <!--
+      HttpClient Resilience: Retry + Circuit Breaker varsayılan politikaları
+      → AddStandardResilienceHandler() ile tüm HttpClient'lara uygulanır
+      → Polly 8.x altyapısı üzerine kurulu
+    -->
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.*" />
+    
+    <!--
+      OpenTelemetry Stack:
+      → OTLP Exporter: Aspire Dashboard'a veri gönderir (gRPC/HTTP)
+      → Hosting: .NET host lifecycle ile entegre OpenTelemetry başlatma
+      → AspNetCore: HTTP istek/yanıt span'larını otomatik oluşturur
+      → Http: HttpClient üzerinden giden istekleri otomatik izler
+      → Runtime: GC, thread pool, bellek metriklerini toplar
+    -->
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.*" />
+  </ItemGroup>
+</Project>

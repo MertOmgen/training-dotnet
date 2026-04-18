@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
-  </ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />    <!-- ServiceDefaults: AddServiceDefaults() extension -->
+    <ProjectReference Include=".\..\..\..\ServiceDefaults\ServiceDefaults.csproj" />  </ItemGroup>
 
 </Project>

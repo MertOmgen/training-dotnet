@@ -9,6 +9,12 @@
   NEDEN Ayrı API Projesi?
   → Application ve Infrastructure'dan bağımsız deploy edilebilir.
   → Farklı host'lar (gRPC, SignalR) için farklı API projeleri oluşturulabilir.
+  
+  Aspire Entegrasyonu Sonrası Değişiklikler:
+  → OpenTelemetry paketleri kaldırıldı (ServiceDefaults yönetir)
+  → Manuel Redis paketleri Aspire komponent paketleriyle değiştirildi
+  → Aspire.Npgsql ve Aspire.MongoDB paketleri eklendi
+  → ServiceDefaults project reference eklendi
 -->
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
@@ -25,18 +31,40 @@
     <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 
-    <!-- OpenTelemetry: Distributed Tracing -->
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+    <!--
+      OpenTelemetry paketleri KALDIRILDI.
+      ServiceDefaults projesi bu paketleri içerir ve AddServiceDefaults()
+      çağrısı ile tüm OTel konfigürasyonu otomatik yapılır.
+    -->
 
     <!-- Swagger -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 
-    <!-- Redis DI Extensions -->
-    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.11" />
-    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <!--
+      Aspire Redis Komponent Paketi:
+      → AddRedisDistributedCache("redis") → IDistributedCache DI kaydı
+      → AddRedisClient("redis") → IConnectionMultiplexer DI kaydı
+      → ConnectionStrings__redis env var'ını otomatik okur (Aspire inject eder)
+      → Health check otomatik eklenir (/health endpoint'inde görünür)
+    -->
+    <PackageReference Include="Aspire.StackExchange.Redis" Version="8.*" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="8.*" />
+
+    <!--
+      Aspire EF Core + PostgreSQL Komponent Paketi:
+      → AddNpgsqlDbContext<T>("catalog-db") → DbContext DI kaydı
+      → ConnectionStrings__catalog-db env var'ını otomatik okur
+      → Health check + retry politikası otomatik eklenir
+    -->
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.*" />
+
+    <!--
+      Aspire MongoDB Driver Komponent Paketi:
+      → AddMongoDBClient("mongodb") → IMongoClient DI kaydı
+      → ConnectionStrings__mongodb env var'ını otomatik okur
+      → Health check otomatik eklenir
+    -->
+    <PackageReference Include="Aspire.MongoDB.Driver" Version="8.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +72,11 @@
     <ProjectReference Include="..\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Caching\Caching.Redis\Caching.Redis.csproj" />
+    <!--
+      ServiceDefaults: AddServiceDefaults() extension method'unu sağlar.
+      → OpenTelemetry, health checks, service discovery, resilience
+    -->
+    <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

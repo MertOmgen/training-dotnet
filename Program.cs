@@ -50,17 +50,39 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
+    // ==========================================================================
+    // ASPIRE: AddServiceDefaults
+    // ==========================================================================
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // AddServiceDefaults() burada da çalışır:
+    // → OpenTelemetry: Tüm Gateway istekleri trace edilir
+    // → Service Discovery: YARP'la birlikte "http://catalog-api" gibi
+    //   Aspire adları gerçek adreslere çevrilir
+    // → Health Checks: /health + /alive endpoint'leri eklenir
+    // ==========================================================================
+    builder.AddServiceDefaults();
+
     // =========================================================================
-    // 1. YARP Reverse Proxy
+    // 1. YARP Reverse Proxy + Aspire Service Discovery
     // =========================================================================
-    // EĞİTİCİ NOT:
-    // YARP konfigürasyonu appsettings.json'dan okunur.
-    // "ReverseProxy" bölümünde Routes ve Clusters tanımlanır.
-    // → Route: URL pattern eşleştirme kuralı
-    // → Cluster: Hedef servisin adresi (birden fazla instance olabilir)
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // .AddServiceDiscoveryDestinationResolver() ne yapar?
+    // → YARP, cluster destination adreslerini çözerken
+    //   Microsoft.Extensions.ServiceDiscovery'yi kullanır.
+    //
+    // appsettings.json'da:
+    //   "Address": "http://catalog-api"   ← Aspire servis adı
+    //   YARP bunu runtime'da gerçek IP:PORT adresine çevirir.
+    //
+    // Eski yaklaşım:
+    //   "Address": "https://localhost:65173"  ← Hard-coded port
+    //   Her geliştirici farklı port kullanabilir, CI/CD'de değişir.
     // =========================================================================
     builder.Services.AddReverseProxy()
-        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+        .AddServiceDiscoveryDestinationResolver();
 
     // =========================================================================
     // 2. JWT Authentication (Gateway Level)
@@ -168,14 +190,15 @@ try
     // ─────────────────────────────────────────────────────
     app.MapReverseProxy();
 
-    // Health check endpoint
-    app.MapGet("/health", () => Results.Ok(new
-    {
-        Service = "API Gateway",
-        Status = "Healthy",
-        Timestamp = DateTime.UtcNow,
-        Routes = new[] { "catalog", "identity", "borrowing", "notification" }
-    })).WithTags("Health");
+    // ==========================================================================
+    // ASPIRE: Health check endpoint'leri (/health + /alive)
+    // ==========================================================================
+    // 📚 EĞİTİCİ NOT:
+    // Manuel /health endpoint'i kaldırıldı.
+    // MapDefaultEndpoints() hem /health hem /alive endpoint'ini yönetir.
+    // Aspire Dashboard bu endpoint'leri kullanarak servis durumunu takip eder.
+    // ==========================================================================
+    app.MapDefaultEndpoints();
 
     Log.Information("API Gateway başarıyla başlatıldı.");
     app.Run();
