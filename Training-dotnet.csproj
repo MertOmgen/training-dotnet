@@ -39,7 +39,15 @@
 
   <ItemGroup>
     <!-- YARP: .NET tabanlı Reverse Proxy -->
-    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+    
+    <!--
+      YARP + Aspire Service Discovery entegrasyonu:
+      → AddServiceDiscoveryDestinationResolver() ile YARP, "http://catalog-api" gibi
+        Aspire servis adlarını gerçek adrese çevirir.
+      → Microsoft.Extensions.ServiceDiscovery.Yarp paketi bu köprüyü sağlar.
+    -->
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Yarp" Version="9.*" />
     
     <!-- JWT doğrulama (Gateway seviyesi) -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
@@ -52,6 +60,15 @@
     
     <!-- Swagger -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      ServiceDefaults: AddServiceDefaults() extension method'unu sağlar.
+      OpenTelemetry, health checks, service discovery, resilience.
+      DefaultItemExcludes src\** dışlasa da ProjectReference'lar etkilenmez.
+    -->
+    <ProjectReference Include="src\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

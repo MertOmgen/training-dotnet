@@ -47,17 +47,20 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
+    // ==========================================================================
+    // ASPIRE: AddServiceDefaults
+    // ==========================================================================
+    // 📚 EĞİTİCİ NOT: OpenTelemetry + Health Checks + Service Discovery tek satırda.
+    // ==========================================================================
+    builder.AddServiceDefaults();
+
     // =========================================================================
-    // 1. EF Core + PostgreSQL (Identity için ayrı veritabanı)
+    // 1. EF Core + PostgreSQL — Aspire Yönetimli
     // =========================================================================
-    // EĞİTİCİ NOT:
-    // Her mikroservisin kendi veritabanı vardır (Database per Service pattern).
-    // Identity servisi kendi kullanıcı tablosunu yönetir.
+    // "identity-db" → AppHost'ta: postgres.AddDatabase("identity-db")
+    // AddNpgsqlDbContext: Connection string otomatik okunur + health check eklenir
     // =========================================================================
-    builder.Services.AddDbContext<IdentityDbContext>(options =>
-        options.UseNpgsql(
-            builder.Configuration.GetConnectionString("IdentityDb")
-            ?? "Host=localhost;Database=lms_identity_db;Username=lms_user;Password=lms_password_2024"));
+    builder.AddNpgsqlDbContext<IdentityDbContext>("identity-db");
 
     // =========================================================================
     // 2. ASP.NET Core Identity
@@ -135,6 +138,9 @@ try
     app.UseAuthorization();
 
     app.MapIdentityEndpoints();
+
+    // ASPIRE: Health check endpoint'leri (/health + /alive)
+    app.MapDefaultEndpoints();
 
     // EF Core migration'ları otomatik uygula (development ortamında)
     using (var scope = app.Services.CreateScope())

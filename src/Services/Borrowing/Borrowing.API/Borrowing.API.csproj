@@ -31,12 +31,16 @@
     <!-- Polly: Servisler arası iletişimde dayanıklılık -->
     <PackageReference Include="Polly" Version="8.5.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.11" />
+    <!-- Aspire: Npgsql EF Core entegrasyonu -->
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include=".\..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+    <ProjectReference Include=".\..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
+    <ProjectReference Include=".\..\..\..\BuildingBlocks\SharedKernel\SharedKernel.csproj" />
+    <!-- ServiceDefaults: AddServiceDefaults() extension -->
+    <ProjectReference Include=".\..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

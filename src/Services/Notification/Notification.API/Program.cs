@@ -33,6 +33,11 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
+    // ==========================================================================
+    // ASPIRE: AddServiceDefaults
+    // ==========================================================================
+    builder.AddServiceDefaults();
+
     // =========================================================================
     // MassTransit Consumer Registrasyonu
     // =========================================================================
@@ -53,14 +58,27 @@ try
 
         cfg.UsingRabbitMq((context, busConfig) =>
         {
-            busConfig.Host(
-                builder.Configuration["RabbitMQ:Host"] ?? "localhost",
-                builder.Configuration["RabbitMQ:VirtualHost"] ?? "/",
-                h =>
-                {
-                    h.Username(builder.Configuration["RabbitMQ:Username"] ?? "lms_user");
-                    h.Password(builder.Configuration["RabbitMQ:Password"] ?? "lms_password_2024");
-                });
+            // ─────────────────────────────────────────────────────
+            // Aspire Connection String Desteği
+            // Aspire "rabbitmq" kaynağı: ConnectionStrings__rabbitmq env varı inject edilir
+            // Standalone: appsettings.json'dan RabbitMQ:Host okunur
+            // ─────────────────────────────────────────────────────
+            var rabbitConnectionString = builder.Configuration.GetConnectionString("rabbitmq");
+            if (!string.IsNullOrEmpty(rabbitConnectionString))
+            {
+                busConfig.Host(new Uri(rabbitConnectionString));
+            }
+            else
+            {
+                busConfig.Host(
+                    builder.Configuration["RabbitMQ:Host"] ?? "localhost",
+                    builder.Configuration["RabbitMQ:VirtualHost"] ?? "/",
+                    h =>
+                    {
+                        h.Username(builder.Configuration["RabbitMQ:Username"] ?? "lms_user");
+                        h.Password(builder.Configuration["RabbitMQ:Password"] ?? "lms_password_2024");
+                    });
+            }
 
             // ─────────────────────────────────────────────────
             // Retry Policy:
@@ -87,13 +105,9 @@ try
         app.UseSwaggerUI();
     }
 
-    // Health check endpoint
-    app.MapGet("/health", () => Results.Ok(new
-    {
-        Service = "Notification.API",
-        Status = "Healthy",
-        Timestamp = DateTime.UtcNow
-    })).WithTags("Health");
+    // ASPIRE: Health check endpoint'leri (/health + /alive)
+    // Manuel /health endpoint'i kaldırıldı — MapDefaultEndpoints() bunu yönetir
+    app.MapDefaultEndpoints();
 
     Log.Information("Notification.API başarıyla başlatıldı. Event consumer aktif.");
     app.Run();

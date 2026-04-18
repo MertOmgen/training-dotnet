@@ -2,24 +2,8 @@
 # DOCKER COMPOSE — Library Management System Altyapısı
 # =============================================================================
 # 📚 EĞİTİCİ NOT (Tech-Tutor):
-#
-# ⚠️  ASPIRE ENTEGRASYONUNDan SONRA KULLANIM DEĞİŞTİ:
-#
-# Geliştirme (Development):
-#   → Artık bu dosyayı kullanmanıza GEREK YOK.
-#   → src/AppHost projesini başlatın: "dotnet run --project src/AppHost"
-#   → Aspire, tüm altyapıyı (PostgreSQL, MongoDB, Redis, RabbitMQ, Elasticsearch)
-#     otomatik olarak container olarak başlatır.
-#   → Aspire Dashboard: http://localhost:18888
-#
-# Production (CI/CD):
-#   → docker-compose.prod.yml dosyasını kullanın.
-#   → Bu dosya, production ortamı için referans konfigürasyondur.
-#
-# Bu Dosyanın Rolü (Artık):
-#   → Referans / dokümantasyon amaçlı bırakılmıştır.
-#   → Infrastructure konfigürasyon ayarlarını görmek için kullanılabilir.
-#   → "docker compose up -d" ile Aspire olmadan da çalıştırılabilir.
+# Bu dosya, tüm microservice altyapısını tek bir komutla ayağa kaldırır.
+# "docker compose up -d" komutu ile tüm konteynerlar başlatılır.
 #
 # NEDEN Docker Compose?
 # → Microservice mimarisinde her servis farklı bağımlılıklara sahiptir.

@@ -59,4 +59,21 @@
   <Folder Name="/Services/Notification/">
     <Project Path="src/Services/Notification/Notification.API/Notification.API.csproj" />
   </Folder>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Aspire (Orchestration + Shared Defaults) -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--
+    📚 EĞİTİCİ NOT (Tech-Tutor):
+    
+    AppHost: Aspire orkestratörü. "dotnet run" ile tüm sistemi başlatır.
+    ServiceDefaults: Tüm servislerin paylaştığı OTel + health check + SD kütüphanesi.
+    
+    Visual Studio'da bu projeleri seçip "Set as Startup Project" yaparak
+    tüm sistemi tek tıkla başlatabilirsiniz.
+  -->
+  <Folder Name="/Aspire/">
+    <Project Path="src/AppHost/AppHost.csproj" />
+    <Project Path="src/ServiceDefaults/ServiceDefaults.csproj" />
+  </Folder>
 </Solution>

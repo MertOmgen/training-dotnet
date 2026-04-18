@@ -125,11 +125,3 @@ Servisler ayağa kalktıktan sonra aşağıdaki adreslerden erişebilirsiniz (Po
 - **Kibana (Logs):** `http://localhost:5601`
 
 ---
-
-## 🤝 Katkıda Bulunma
-
-1. Bu depoyu forklayın.
-2. Yeni bir feature branch oluşturun (`git checkout -b feature/yeni-ozellik`).
-3. Değişikliklerinizi commitleyin (`git commit -m 'Yeni özellik eklendi'`).
-4. Branch'inizi pushlayın (`git push origin feature/yeni-ozellik`).
-5. Bir Pull Request oluşturun.

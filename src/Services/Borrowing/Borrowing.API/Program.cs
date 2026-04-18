@@ -39,11 +39,14 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
-    // EF Core + PostgreSQL
-    builder.Services.AddDbContext<BorrowingDbContext>(options =>
-        options.UseNpgsql(
-            builder.Configuration.GetConnectionString("BorrowingDb")
-            ?? "Host=localhost;Database=lms_borrowing_db;Username=lms_user;Password=lms_password_2024"));
+    // ==========================================================================
+    // ASPIRE: AddServiceDefaults
+    // ==========================================================================
+    builder.AddServiceDefaults();
+
+    // EF Core + PostgreSQL — Aspire Yönetimli
+    // "borrowing-db" → AppHost'ta: postgres.AddDatabase("borrowing-db")
+    builder.AddNpgsqlDbContext<BorrowingDbContext>("borrowing-db");
 
     builder.Services.AddMediatR(cfg =>
         cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
@@ -51,24 +54,21 @@ try
     // =========================================================================
     // Polly Resiliency — HttpClient için Retry + Circuit Breaker
     // =========================================================================
-    // EĞİTİCİ NOT:
-    // NEDEN Polly?
-    // → Microservice mimarisinde servisler birbirine HTTP ile istek atar.
-    //   Network geçici olarak kesildiğinde veya hedef servis geçici olarak
-    //   yanıt vermediğinde retry ile otomatik tekrar dener.
-    //   Sürekli hata durumunda ise Circuit Breaker devreyi keser ve
-    //   cascade failure'ı (domino etkisini) önler.
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
     //
-    // Exponential Backoff:
-    // → Her retry arasında bekleme süresi katlanarak artar:
-    //   1. deneme: 2^1 = 2 saniye
-    //   2. deneme: 2^2 = 4 saniye
-    //   3. deneme: 2^3 = 8 saniye
+    // AddServiceDefaults() → ConfigureHttpClientDefaults() → AddStandardResilienceHandler()
+    // BUNU otomatik yapar (tüm HttpClient'lar için).
+    //
+    // Aspire Service Discovery ile "CatalogService" URL'i artık:
+    //   Eski: "http://localhost:5001" (sabit port)
+    //   Yeni: "http://catalog-api"    (Aspire DNS çözümler)
+    //
+    // Aspire bu DNS adını çalışma zamanında gerçek container adresine çevirir.
     // =========================================================================
     builder.Services.AddHttpClient("CatalogService", client =>
     {
         client.BaseAddress = new Uri(
-            builder.Configuration["Services:CatalogUrl"] ?? "http://localhost:5001");
+            builder.Configuration["Services:CatalogUrl"] ?? "http://catalog-api");
     });
 
     // RabbitMQ Event Bus
@@ -87,6 +87,9 @@ try
 
     app.UseSerilogRequestLogging();
     app.MapBorrowingEndpoints();
+
+    // ASPIRE: Health check endpoint'leri (/health + /alive)
+    app.MapDefaultEndpoints();
 
     using (var scope = app.Services.CreateScope())
     {

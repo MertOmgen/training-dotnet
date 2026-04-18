@@ -1,0 +1,94 @@
+<!--
+  AppHost — .NET Aspire Orkestratörü
+  
+  📚 EĞİTİCİ NOT (Tech-Tutor):
+  
+  AppHost nedir?
+  → .NET Aspire mimarisinin "kaptanı" — tek bir "dotnet run" komutuyla
+    tüm servisleri, veritabanlarını ve altyapı bileşenlerini başlatır.
+    docker-compose'a benzer ama kod ile tanımlanır, tip-güvenlidir.
+  
+  NEDEN docker-compose yerine AppHost?
+  ┌────────────────────┬──────────────────┬──────────────────────┐
+  │                    │ docker-compose   │ Aspire AppHost       │
+  ├────────────────────┼──────────────────┼──────────────────────┤
+  │ Tanımlama dili     │ YAML             │ C# kodu              │
+  │ Tip güvenliği      │ Yok (string)     │ Var (derleme hatası) │
+  │ IDE desteği        │ Sınırlı          │ Tam IntelliSense     │
+  │ Koşullu mantık     │ Zor              │ if/switch mümkün     │
+  │ Dashboard          │ Yok              │ Aspire Dashboard     │
+  │ Connection strings │ Manuel           │ Otomatik inject      │
+  │ Service Discovery  │ Manuel           │ Otomatik             │
+  └────────────────────┴──────────────────┴──────────────────────┘
+  
+  IsAspireHost = true ne sağlar?
+  → SDK bu projeyi özel olarak işler:
+    1. Referans verilen projeleri "proje kaynağı" olarak tanır
+       (Projects.Catalog_API gibi tip-güvenli isimler oluşturur)
+    2. Aspire Dashboard başlatma altyapısını enjekte eder
+    3. OTLP endpoint'lerini otomatik konfigüre eder
+    4. dotnet run → Dashboard + tüm servisler aynı anda başlar
+  
+  Aspire Dashboard (http://localhost:18888):
+  → Tüm servislerin log/trace/metric verilerini tek ekranda gösterir
+  → Servis sağlığını (/health, /alive) gerçek zamanlı izler
+  → Distributed trace waterfall diyagramı gösterir
+  → Servis URL'lerini, port'larını ve environment variable'larını listeler
+  
+  ÖNEMLI: AppHost production'a deploy edilmez.
+  → Yalnızca geliştirme ortamında kullanılır.
+  → "dotnet aspire publish" ile Kubernetes/Azure manifesti üretilebilir.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!--
+      net9.0 hedeflemesinin nedeni:
+      Aspire 9+ hosting paketleri net9.0 veya üzerini gerektirir.
+      Servis projeleri (Catalog.API vs.) net8.0'da kalmaya devam eder.
+      Bu "hibrit" yaklaşım Aspire tarafından desteklenmektedir.
+    -->
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspire-apphost-lms</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Aspire Hosting Paketleri:
+      
+      AppHost:
+      → Temel orkestrasyon altyapısı. DistributedApplication.CreateBuilder(args)
+        metodunu ve Resource Model tiplerini içerir.
+      
+      PostgreSQL:
+      → AddPostgres() metodunu sağlar
+      → İçerisinde: postgres Docker image yönetimi + pgAdmin desteği
+      
+      MongoDB:
+      → AddMongoDB() metodunu sağlar
+      → İçerisinde: mongo Docker image + MongoExpress UI desteği
+      
+      Redis:
+      → AddRedis() metodunu sağlar
+      → İçerisinde: redis Docker image + RedisInsight UI desteği
+      
+      RabbitMQ:
+      → AddRabbitMQ() metodunu sağlar
+      → İçerisinde: rabbitmq:management Docker image (UI dahil)
+      
+      Elasticsearch:
+      → AddElasticsearch() metodunu sağlar
+      → İçerisinde: Elasticsearch single-node Docker image
+    -->
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.*" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.*" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.*" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="9.*" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="9.*" />
+    <PackageReference Include="Aspire.Hosting.Elasticsearch" Version="9.*" />
+  </ItemGroup>
+
+  
+</Project>

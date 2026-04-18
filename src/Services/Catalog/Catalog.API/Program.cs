@@ -36,10 +36,7 @@ using EventBus.RabbitMQ;
 using Elastic.Clients.Elasticsearch;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using StackExchange.Redis;
@@ -53,12 +50,26 @@ using StackExchange.Redis;
 // Elasticsearch sink'i ile log'lar Kibana'da görselleştirilebilir.
 // =============================================================================
 
+// =============================================================================
+// ASPIRE EĞİTİCİ NOT: Serilog + Elasticsearch URL Çözümü
+// =============================================================================
+// Aspire AppHost, her servisine ConnectionStrings__elasticsearch env var'ını
+// inject eder. Ancak Serilog bootstrap, WebApplication.CreateBuilder()'dan
+// ÖNCE gerçekleşir (henüz IConfiguration nesnesi hazır değil).
+//
+// Çözüm: Doğrudan Environment.GetEnvironmentVariable() ile okumak.
+//   • Aspire ile: env var → "http://aspire-yönetimli-elasticsearch:9200"
+//   • Standalone: env var yok → fallback "http://localhost:9200"
+// =============================================================================
+var elasticsearchUrl = Environment.GetEnvironmentVariable("ConnectionStrings__elasticsearch")
+    ?? "http://localhost:9200";
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .Enrich.FromLogContext()
     .Enrich.WithProperty("ServiceName", "Catalog.API")
     .WriteTo.Console()
-    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(elasticsearchUrl))
     {
         IndexFormat = "lms-catalog-logs-{0:yyyy.MM.dd}",
         AutoRegisterTemplate = true,
@@ -76,6 +87,22 @@ try
 
     // Serilog'u ASP.NET Core'a entegre et
     builder.Host.UseSerilog();
+
+    // =============================================================================
+    // ASPIRE: AddServiceDefaults
+    // =============================================================================
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // Bu tek satır çok şey yapar:
+    // → OpenTelemetry (traces, metrics, logs) — OTLP Exporter ile Aspire Dashboard'a
+    // → Health Checks (/health + /alive endpoint'leri)
+    // → Service Discovery (DNS tabanlı — http://catalog-api gibi isimler çözülür)
+    // → HTTP Resilience (retry, circuit breaker)
+    //
+    // ServiceDefaults projesindeki Extensions.cs'deki AddServiceDefaults() metodunu çağırır.
+    // Bu metot, tüm servislerde ortak olan konfigürasyonu tek yerden yönetir.
+    // =============================================================================
+    builder.AddServiceDefaults();
 
     // =============================================================================
     // 2. MediatR + Pipeline Behaviors
@@ -106,30 +133,57 @@ try
     builder.Services.AddValidatorsFromAssembly(typeof(CreateBookCommand).Assembly);
 
     // =============================================================================
-    // 3. EF Core + PostgreSQL (Write DB)
+    // 3. EF Core + PostgreSQL (Write DB) — Aspire Yönetimli
     // =============================================================================
-    builder.Services.AddDbContext<CatalogDbContext>(options =>
-        options.UseNpgsql(
-            builder.Configuration.GetConnectionString("WriteDb")
-            ?? "Host=localhost;Database=lms_catalog_db;Username=lms_user;Password=lms_password_2024"));
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // Eski yaklaşım:
+    //   builder.Services.AddDbContext<CatalogDbContext>(options =>
+    //       options.UseNpgsql("Host=localhost;..."));
+    //
+    // Yeni Aspire yaklaşımı:
+    //   builder.AddNpgsqlDbContext<CatalogDbContext>("catalog-db");
+    //
+    // "catalog-db" → AppHost'ta: postgres.AddDatabase("catalog-db")
+    //
+    // Aspire şunu inject eder:
+    //   ConnectionStrings__catalog-db = "Host=aspire-postgres;Database=catalog-db;..."
+    //
+    // AddNpgsqlDbContext ne sağlar?
+    // → Connection string'i otomatik okur
+    // → Retry politikası ekler (geçici hatalarda otomatik yeniden bağlanır)
+    // → Health check kaydeder (/health endpoint'inde görünür)
+    // → DbContext'i Scoped olarak DI'ya kaydeder
+    // =============================================================================
+    builder.AddNpgsqlDbContext<CatalogDbContext>("catalog-db");
 
     // Repository DI kaydı
     builder.Services.AddScoped<IBookRepository, BookRepository>();
 
     // =============================================================================
-    // 4. MongoDB (Read DB)
+    // 4. MongoDB (Read DB) — Aspire Yönetimli
     // =============================================================================
-    // EĞİTİCİ NOT:
-    // CQRS'de Read DB ayrıdır. Query handler'lar MongoDB'den okur.
-    // MongoDB client'ı singleton olarak kaydedilir (connection pooling).
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // Eski yaklaşım:
+    //   builder.Services.AddSingleton<IMongoClient>(sp => new MongoClient("..."));
+    //
+    // Yeni Aspire yaklaşımı:
+    //   builder.AddMongoDBClient("mongodb");
+    //
+    // "mongodb" → AppHost'ta: builder.AddMongoDB("mongodb")
+    //
+    // AddMongoDBClient ne sağlar?
+    // → ConnectionStrings__mongodb env var'ından connection string okur
+    // → IMongoClient'ı Singleton olarak DI'ya kaydeder
+    // → Health check ekler
+    //
+    // IMongoDatabase ise hâlâ manuel kayıt gerektirir (hangi DB adı seçileceği
+    // uygulama mantığına özgüdür, Aspire tarafından bilinmez).
     // =============================================================================
-    builder.Services.AddSingleton<IMongoClient>(sp =>
-    {
-        var connectionString = builder.Configuration.GetConnectionString("ReadDb")
-            ?? "mongodb://lms_user:lms_password_2024@localhost:27017";
-        return new MongoClient(connectionString);
-    });
+    builder.AddMongoDBClient("mongodb");
 
+    // IMongoDatabase: Catalog Read DB — manuel scoped kayıt
     builder.Services.AddScoped<IMongoDatabase>(sp =>
     {
         var client = sp.GetRequiredService<IMongoClient>();
@@ -137,28 +191,48 @@ try
     });
 
     // =============================================================================
-    // 5. Redis (Distributed Cache)
+    // 5. Redis (Distributed Cache) — Aspire Yönetimli
     // =============================================================================
-    builder.Services.AddStackExchangeRedisCache(options =>
-    {
-        options.Configuration = builder.Configuration.GetConnectionString("Redis")
-            ?? "localhost:6379";
-        options.InstanceName = "lms_catalog_";
-    });
-
-    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-        ConnectionMultiplexer.Connect(
-            builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // Eski yaklaşım:
+    //   builder.Services.AddStackExchangeRedisCache(options => { options.Configuration = "..."; });
+    //   builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect("..."));
+    //
+    // Yeni Aspire yaklaşımı:
+    //   builder.AddRedisDistributedCache("redis");  → IDistributedCache kaydı
+    //   builder.AddRedisClient("redis");            → IConnectionMultiplexer kaydı
+    //
+    // "redis" → AppHost'ta: builder.AddRedis("redis")
+    //
+    // Her iki metot da:
+    // → ConnectionStrings__redis env var'ından connection string okur
+    // → Health check ekler
+    // → Retry/circuit breaker politikası uygular
+    // =============================================================================
+    builder.AddRedisDistributedCache("redis");
+    builder.AddRedisClient("redis");
 
     builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
     // =============================================================================
-    // 6. Elasticsearch (Search)
+    // 6. Elasticsearch (Search) — Aspire Connection String
+    // =============================================================================
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // Aspire'ın Elasticsearch için resmi bir IDistributedApplicationBuilder extension'ı
+    // mevcuttur (builder.AddElasticsearch) fakat bu, hosting paketi içindir (AppHost'ta).
+    // Servis tarafında ise connection string'i manual okuyup ElasticsearchClient kurarız.
+    //
+    // ConnectionStrings__elasticsearch → AppHost'taki builder.AddElasticsearch("elasticsearch")
+    // tarafından inject edilir.
     // =============================================================================
     builder.Services.AddSingleton<ElasticsearchClient>(sp =>
     {
-        var settings = new ElasticsearchClientSettings(
-            new Uri(builder.Configuration["Elasticsearch:Url"] ?? "http://localhost:9200"))
+        var esUrl = builder.Configuration.GetConnectionString("elasticsearch")
+            ?? builder.Configuration["Elasticsearch:Url"]
+            ?? "http://localhost:9200";
+        var settings = new ElasticsearchClientSettings(new Uri(esUrl))
             .DefaultIndex("catalog-books");
         return new ElasticsearchClient(settings);
     });
@@ -171,31 +245,23 @@ try
     builder.Services.AddRabbitMqEventBus(builder.Configuration);
 
     // =============================================================================
-    // 8. OpenTelemetry (Distributed Tracing)
+    // 8. Swagger + CORS
     // =============================================================================
-    // EĞİTİCİ NOT:
-    // NEDEN Distributed Tracing?
-    // → Microservice mimarisinde tek bir HTTP isteği birden fazla servisten geçer.
-    //   OpenTelemetry, bu isteğin tüm servisler arasındaki yolculuğunu takip eder.
-    //   Her istek bir "Trace ID" ile işaretlenir ve Zipkin/Jaeger'da görselleştirilir.
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
     //
-    // ┌──────────┐    ┌──────────┐    ┌──────────────┐    ┌──────────────┐
-    // │ Client   │ → │ Gateway  │ → │ Catalog API  │ → │ PostgreSQL   │
-    // │          │    │ (YARP)   │    │ TraceId: X   │    │ TraceId: X   │
-    // └──────────┘    └──────────┘    └──────────────┘    └──────────────┘
-    //                                       ↓
-    //                                ┌──────────────┐
-    //                                │ RabbitMQ     │
-    //                                │ TraceId: X   │
-    //                                └──────────────┘
-    // =============================================================================
-    builder.Services.AddOpenTelemetry()
-        .ConfigureResource(resource => resource.AddService("Catalog.API"))
-        .WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation() // Dışarıdan gelen HTTP isteklerini otomatik yakala
-            .AddHttpClientInstrumentation() // Başka servislere giden HTTP isteklerini otomatik yakala
-            .AddConsoleExporter());
-            //.AddOtlpExporter();              Verileri Jaeger, Zipkin veya Elasticsearch'e gönder
+    // OpenTelemetry bloğu KALDIRILDI — AddServiceDefaults() bunu otomatik yapar.
+    // ServiceDefaults/Extensions.cs'deki ConfigureOpenTelemetry() metodu:
+    // → Tüm servisler için OTel konfigürasyonunu TEK YERDEN yönetir
+    // → OTLP Exporter ile Aspire Dashboard'a gönderir
+    // → AspNetCore + HTTP + Runtime Metrics enstrümanlarını ekler
+    //
+    // ┌───────────────────────────────────────────────────────┐
+    // │  Aspire Dashboard (http://localhost:18888)            │
+    // │  ├── Traces: Tüm servisler arası istek akışları       │
+    // │  ├── Metrics: Request/s, latency, error rate          │
+    // │  └── Logs: Structured log akışı                       │
+    // └───────────────────────────────────────────────────────┘
+    //
     // =============================================================================
     // 9. Swagger + CORS
     // =============================================================================
@@ -232,6 +298,23 @@ try
     //   Bu, Program.cs'in temiz kalmasını sağlar.
     // ─────────────────────────────────────────────────────
     app.MapCatalogEndpoints();
+
+    // =============================================================================
+    // ASPIRE: Default Health Endpoint'leri (/health + /alive)
+    // =============================================================================
+    // 📚 EĞİTİCİ NOT (Tech-Tutor):
+    //
+    // MapDefaultEndpoints() şunları ekler (Development ortamında):
+    //   GET /health → Readiness probe: tüm health check'leri çalıştırır
+    //                 (PostgreSQL, MongoDB, Redis, RabbitMQ)
+    //   GET /alive  → Liveness probe: sadece "live" tag'li check'leri çalıştırır
+    //                 (servis hayatta mı? bağımlılıklar kontrol edilmez)
+    //
+    // Kubernetes Liveness vs Readiness Probe Farkı:
+    //   Liveness  (/alive): "Servis kilitlendiyse yeniden başlat"
+    //   Readiness (/health): "Trafik gönderilmeye hazır mı?"
+    // =============================================================================
+    app.MapDefaultEndpoints();
 
     // Elasticsearch index'ini oluştur (uygulama başlangıcında)
     using (var scope = app.Services.CreateScope())
