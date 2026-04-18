@@ -91,8 +91,8 @@ var postgres = builder.AddPostgres("postgres")
     .WithPgAdmin();
 
 // Database per Service Pattern: Her mikroservisin kendi veritabanı
-var catalogDb   = postgres.AddDatabase("catalog-db");
-var identityDb  = postgres.AddDatabase("identity-db");
+var catalogDb = postgres.AddDatabase("catalog-db");
+var identityDb = postgres.AddDatabase("identity-db");
 var borrowingDb = postgres.AddDatabase("borrowing-db");
 
 // ─────────────────────────────────────────────────────────────────────────────
