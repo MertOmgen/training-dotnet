@@ -114,3 +114,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// WebApplicationFactory icin gerekli — smoke testlerin Program sinifina erisimini saglar
+public partial class Program { }
