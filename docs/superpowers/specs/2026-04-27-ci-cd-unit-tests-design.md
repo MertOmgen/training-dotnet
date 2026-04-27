@@ -26,7 +26,7 @@ Proje, .NET 8 + Clean Architecture + CQRS + .NET Aspire üzerine kurulu bir küt
 | CI platformu | GitHub Actions | Repo zaten GitHub'da, sıfır altyapı |
 | CD | Yok (şimdilik) | Eğitim projesi; deploy hedefi belirsiz |
 | Test framework | xUnit + Moq + FluentAssertions | .NET de facto standart |
-| Test yaklaşımı | Flat test projects | Sade yapı, eğitim projesi için yeterli |
+| Test yaklaşımı | Servis başına tek test projesi (Flat) | Servis başına bir .csproj; proje içi klasörler (Domain/, Application/) izin verilir |
 | Test kapsamı | Catalog derin + diğer servisler smoke | Catalog en olgun katmanlı yapıya sahip |
 
 ---
@@ -91,6 +91,40 @@ Test senaryoları:
 - `GET /health` → HTTP 200
 - Uygulama startup'ta exception fırlatmıyor
 
+**Aspire olmadan izole başlatma:**  
+Her servisin `Program.cs` dosyası Aspire AppHost tarafından orkestrasyona bağımlıdır (connection string env var'ları Aspire inject eder). `WebApplicationFactory` bu env var'ları sağlamaz; bu nedenle her test projesinde `ConfigureTestServices` ile bağımlılıklar override edilir:
+
+- **PostgreSQL / MongoDB / Redis** → `IBookRepository`, `IMongoDatabase` gibi interface'ler `Moq.Mock<T>` ile stub'lanır; gerçek DB bağlantısı denenmez
+- **RabbitMQ** → `IEventBus` interface'i stub'lanır
+- **Connection string'ler** → `appsettings.Test.json` içinde geçersiz/boş endpoint tanımlanır (bağlantı denenirse test hemen fail olsun diye değil, sadece servis kaydı hata vermesin diye)
+
+```csharp
+// Örnek — CustomWebApplicationFactory<Program>
+protected override void ConfigureWebHost(IWebHostBuilder builder)
+{
+    builder.UseEnvironment("Test");
+    builder.ConfigureTestServices(services =>
+    {
+        // Gerçek repository'yi mock ile değiştir
+        services.RemoveAll<IBookRepository>();
+        services.AddSingleton(Mock.Of<IBookRepository>());
+        // vb.
+    });
+}
+```
+
+**`appsettings.Test.json` içeriği** (her API projesi altında):
+```json
+{
+  "ConnectionStrings": {
+    "postgres": "Host=localhost;Port=0;",
+    "mongodb": "mongodb://localhost:0",
+    "redis": "localhost:0"
+  }
+}
+```
+Bu dosya yüklenir ama `ConfigureTestServices` override'ları sayesinde gerçek bağlantı kurulmaz.
+
 ---
 
 ## 4. GitHub Actions CI Pipeline
@@ -111,8 +145,18 @@ Test senaryoları:
 5. dotnet test --no-build --configuration Release
        --logger "trx;LogFileName=test-results.trx"
        --collect:"XPlat Code Coverage"
+       (env: ASPNETCORE_ENVIRONMENT=Test)
 6. actions/upload-artifact@v4 (test-results, coverage)
 ```
+
+**Ortam değişkenleri (GitHub Actions `env:` bloğu):**
+```yaml
+env:
+  ASPNETCORE_ENVIRONMENT: Test
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+```
+`ASPNETCORE_ENVIRONMENT=Test` ayarlandığında `appsettings.Test.json` dosyaları otomatik yüklenir ve `WebApplicationFactory` test ortamını doğru şekilde başlatır.
 
 **Önemli notlar:**
 - `Training-dotnet.csproj` (API Gateway) `DefaultItemExcludes` ile `src/**` dışladığından, test projeleri ayrı çözüm dosyası (`Training-dotnet.slnx`) veya doğrudan glob pattern ile dahil edilir.
