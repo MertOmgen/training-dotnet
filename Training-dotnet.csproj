@@ -33,8 +33,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ApiGateway</RootNamespace>
-    <!-- API Gateway root'ta olduğu için src/ altındaki diğer projeleri derlemeye dahil etme -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);src\**</DefaultItemExcludes>
+    <!-- API Gateway root'ta olduğu için src/ ve tests/ altındaki diğer projeleri derlemeye dahil etme -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\**;tests\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

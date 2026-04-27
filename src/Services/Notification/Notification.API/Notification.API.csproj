@@ -33,8 +33,12 @@
     <PackageReference Include="MailKit" Version="4.15.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />    <!-- ServiceDefaults: AddServiceDefaults() extension -->
+  <ItemGroup>    <Content Update="appsettings.Test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />    <!-- ServiceDefaults: AddServiceDefaults() extension -->
     <ProjectReference Include=".\..\..\..\ServiceDefaults\ServiceDefaults.csproj" />  </ItemGroup>
 
 </Project>

@@ -1,0 +1,66 @@
+# =============================================================================
+# CI Pipeline — Build + Test
+# =============================================================================
+# Tetikleyiciler:
+#   push → master         : Her commit'te çalışır
+#   pull_request → master : Her PR'da çalışır, merge öncesi kontrol
+#
+# Job: build-and-test
+#   → Tüm projeleri derler ve test suite'ini çalıştırır
+#   → Test sonuçları artifact olarak yüklenir
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
+
+      - name: Restore dependencies
+        run: dotnet restore Training-dotnet.slnx
+
+      - name: Build
+        run: dotnet build Training-dotnet.slnx --no-restore --configuration Release
+
+      - name: Run tests
+        run: |
+          dotnet test Training-dotnet.slnx \
+            --no-build \
+            --configuration Release \
+            --logger "trx;LogFileName=test-results.trx" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: ./TestResults/**/*.trx
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: ./TestResults/**/coverage.cobertura.xml

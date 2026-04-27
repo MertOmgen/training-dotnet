@@ -94,7 +94,9 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<BorrowingDbContext>();
-        await db.Database.MigrateAsync();
+        // IsRelational() guard: InMemory database (test) ile MigrateAsync çalışmıyor.
+        if (db.Database.IsRelational())
+            await db.Database.MigrateAsync();
     }
 
     Log.Information("Borrowing.API başarıyla başlatıldı.");
@@ -114,3 +116,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// WebApplicationFactory icin gerekli — smoke testlerin Program sinifina erisimini saglar
+public partial class Program { }

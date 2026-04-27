@@ -35,8 +35,12 @@
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.*" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include=".\..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
+  <ItemGroup>    <Content Update="appsettings.Test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>    <ProjectReference Include=".\..\..\..\BuildingBlocks\EventBus\EventBus.RabbitMQ\EventBus.RabbitMQ.csproj" />
     <ProjectReference Include=".\..\..\..\BuildingBlocks\EventBus\EventBus.Abstractions\EventBus.Abstractions.csproj" />
     <ProjectReference Include=".\..\..\..\BuildingBlocks\SharedKernel\SharedKernel.csproj" />
     <!-- ServiceDefaults: AddServiceDefaults() extension -->

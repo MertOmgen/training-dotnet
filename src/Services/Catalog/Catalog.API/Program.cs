@@ -317,10 +317,17 @@ try
     app.MapDefaultEndpoints();
 
     // Elasticsearch index'ini oluştur (uygulama başlangıcında)
-    using (var scope = app.Services.CreateScope())
+    // try-catch: Elasticsearch geçici olarak erişilemez durumdaysa
+    // (test ortamı, soğuk başlatma) servis yine de ayağa kalkar.
+    try
     {
+        using var scope = app.Services.CreateScope();
         var esService = scope.ServiceProvider.GetRequiredService<ElasticsearchService>();
         await esService.EnsureIndexCreatedAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Elasticsearch başlatılamadı; arama özellikleri devre dışı kalabilir.");
     }
 
     Log.Information("Catalog.API başarıyla başlatıldı.");
@@ -334,3 +341,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// WebApplicationFactory icin gerekli — smoke testlerin Program sinifina erisimini saglar
+public partial class Program { }

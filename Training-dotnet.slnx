@@ -76,4 +76,14 @@
     <Project Path="src/AppHost/AppHost.csproj" />
     <Project Path="src/ServiceDefaults/ServiceDefaults.csproj" />
   </Folder>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Tests -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <Folder Name="/Tests/">
+    <Project Path="tests/Catalog.Tests/Catalog.Tests.csproj" />
+    <Project Path="tests/Borrowing.Tests/Borrowing.Tests.csproj" />
+    <Project Path="tests/Identity.Tests/Identity.Tests.csproj" />
+    <Project Path="tests/Notification.Tests/Notification.Tests.csproj" />
+  </Folder>
 </Solution>
