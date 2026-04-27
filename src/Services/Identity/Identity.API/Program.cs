@@ -146,7 +146,9 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        await dbContext.Database.MigrateAsync();
+        // IsRelational() guard: InMemory database (test) ile MigrateAsync çalışmıyor.
+        if (dbContext.Database.IsRelational())
+            await dbContext.Database.MigrateAsync();
 
         // =====================================================================
         // Rol Seed — Varsayılan rolleri oluştur
