@@ -51,6 +51,36 @@ Projede kullanılan temel teknolojiler ve kullanım alanları:
 
 ---
 
+## 🔁 CI Entegrasyonu (GitHub Actions)
+
+Projede artık GitHub Actions tabanlı bir **CI pipeline** bulunmaktadır. Pipeline dosyası `.github/workflows/ci.yml` altında yer alır ve kalite kapısı olarak her değişiklikte otomatik çalışır.
+
+### Pipeline Özeti
+
+- **Tetikleyiciler:** `master` branch'ine yapılan `push` ve `pull_request` olayları
+- **Çalışma ortamı:** `ubuntu-latest`
+- **.NET sürümü:** `8.x`
+- **Temel adımlar:**
+  - `dotnet restore Training-dotnet.slnx`
+  - `dotnet build Training-dotnet.slnx --no-restore --configuration Release`
+  - `dotnet test Training-dotnet.slnx --no-build --configuration Release`
+
+### CI ile Doğrulanan Özellikler
+
+- Solution içindeki servis ve ortak kütüphanelerin derlenebilir olması
+- `tests/` altındaki xUnit tabanlı unit ve smoke testlerin çalıştırılması
+- Test sonuçlarının **TRX artifact** olarak yüklenmesi
+- Code coverage çıktılarının **Cobertura artifact** olarak yüklenmesi
+
+### Üretilen Artifact'ler
+
+- **`test-results`** → `*.trx`
+- **`coverage-report`** → `coverage.cobertura.xml`
+
+Bu yapı sayesinde `master` branch'ine merge edilmeden önce derleme ve test hataları erken aşamada yakalanır; aynı zamanda test çıktıları ile coverage raporları GitHub Actions üzerinden indirilebilir.
+
+---
+
 ## 🧩 Servisler ve Modüller
 
 Proje aşağıdaki ana servislerden oluşmaktadır:
@@ -241,3 +271,15 @@ dotnet run --project src/Services/Identity/Identity.API/Identity.API.csproj
 - **Kibana (Logs):** `http://localhost:5601`
 
 ---
+
+## ✅ Test ve CI ile Uyumlu Yerel Doğrulama
+
+CI pipeline ile aynı doğrulamayı yerel ortamda çalıştırmak için:
+
+```bash
+dotnet restore Training-dotnet.slnx
+dotnet build Training-dotnet.slnx --no-restore --configuration Release
+dotnet test Training-dotnet.slnx --no-build --configuration Release
+```
+
+Bu komutlar, GitHub Actions workflow'unda çalışan build/test akışıyla birebir uyumludur.
